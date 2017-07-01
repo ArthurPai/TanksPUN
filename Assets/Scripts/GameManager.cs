@@ -16,6 +16,8 @@ namespace TanksPUN
             }
             DontDestroyOnLoad(gameObject);
             instance = this;
+
+            PhotonNetwork.automaticallySyncScene = true;
         }
 
         void Start()
@@ -52,7 +54,13 @@ namespace TanksPUN
 
         public override void OnJoinedRoom()
         {
-            Debug.Log("Joined room!!");
+            if(PhotonNetwork.isMasterClient)
+            {
+                DebugLog("Created room!!");
+                PhotonNetwork.LoadLevel("GameScene");
+            } else {
+                DebugLog("Joined room!!");
+            }
         }
 
         void DebugLog(string msg)
