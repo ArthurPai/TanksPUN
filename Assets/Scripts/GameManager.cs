@@ -82,8 +82,6 @@ namespace TanksPUN
                 "Player",
                 new Vector3(0,0.5f,0),
                 Quaternion.identity, 0);
-
-            Debug.Log(localPlayer.GetInstanceID());
         }
 
         void DebugLog(string msg)
