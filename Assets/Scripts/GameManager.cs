@@ -1,12 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TanksPUN
 {
     public class GameManager : Photon.PunBehaviour
     {
         public static GameManager instance;
+        public static GameObject localPlayer;
 
         void Awake()
         {
@@ -23,6 +25,14 @@ namespace TanksPUN
         void Start()
         {
             PhotonNetwork.ConnectUsingSettings("TanksPUN_v1.0");
+        }
+
+        void OnEnable() {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        void OnDisable() {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
         }
 
         public override void OnConnectedToPhoton()
@@ -61,6 +71,19 @@ namespace TanksPUN
             } else {
                 DebugLog("Joined room!!");
             }
+        }
+
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if(!PhotonNetwork.inRoom) return;
+
+            localPlayer = PhotonNetwork.Instantiate(
+                "Player",
+                new Vector3(0,0.5f,0),
+                Quaternion.identity, 0);
+
+            Debug.Log(localPlayer.GetInstanceID());
         }
 
         void DebugLog(string msg)
