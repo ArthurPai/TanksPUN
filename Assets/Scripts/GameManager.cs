@@ -43,6 +43,18 @@ namespace TanksPUN
             DebugLog("Disconnected");
         }
 
+        public void JoinGameRoom()
+        {
+            RoomOptions options = new RoomOptions();
+            options.MaxPlayers = 6;
+            PhotonNetwork.JoinOrCreateRoom("Kingdom", options, null);
+        }
+
+        public override void OnJoinedRoom()
+        {
+            Debug.Log("Joined room!!");
+        }
+
         void DebugLog(string msg)
         {
             Debug.Log("Photon: " + msg);
