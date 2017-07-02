@@ -9,6 +9,7 @@ namespace TanksPUN
     {
         public static GameManager instance;
         public static GameObject localPlayer;
+        GameObject defaultSpawnPoint;
 
         void Awake()
         {
@@ -20,6 +21,10 @@ namespace TanksPUN
             instance = this;
 
             PhotonNetwork.automaticallySyncScene = true;
+
+            defaultSpawnPoint = new GameObject("Default SpawnPoint");
+            defaultSpawnPoint.transform.position = new Vector3(0, 0.5f, 0);
+            defaultSpawnPoint.transform.SetParent(transform, false);
         }
 
         void Start()
@@ -27,11 +32,13 @@ namespace TanksPUN
             PhotonNetwork.ConnectUsingSettings("TanksPUN_v1.0");
         }
 
-        void OnEnable() {
+        void OnEnable()
+        {
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
-        void OnDisable() {
+        void OnDisable()
+        {
             SceneManager.sceneLoaded -= OnSceneLoaded;
         }
 
@@ -64,8 +71,7 @@ namespace TanksPUN
 
         public override void OnJoinedRoom()
         {
-            if(PhotonNetwork.isMasterClient)
-            {
+            if (PhotonNetwork.isMasterClient) {
                 DebugLog("Created room!!");
                 PhotonNetwork.LoadLevel("GameScene");
             } else {
@@ -76,17 +82,46 @@ namespace TanksPUN
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if(!PhotonNetwork.inRoom) return;
+            if (!PhotonNetwork.inRoom)
+                return;
+
+            var spawnPoint = GetRandomSpawnPoint();
 
             localPlayer = PhotonNetwork.Instantiate(
                 "Player",
-                new Vector3(0,0.5f,0),
-                Quaternion.identity, 0);
+                spawnPoint.position,
+                spawnPoint.rotation, 0);
         }
 
         void DebugLog(string msg)
         {
             Debug.Log("Photon: " + msg);
+        }
+
+        Transform GetRandomSpawnPoint()
+        {
+            var spawnPoints = GetAllObjectsOfTypeInScene<SpawnPoint>();
+            if (spawnPoints.Count == 0) {
+                return defaultSpawnPoint.transform;
+            } else {
+                return spawnPoints[Random.Range(0, spawnPoints.Count)].transform;
+            }
+        }
+
+        public static List<GameObject> GetAllObjectsOfTypeInScene<T>()
+        {
+            List<GameObject> objectsInScene = new List<GameObject>();
+
+            foreach (GameObject go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[]) {
+                if (go.hideFlags == HideFlags.NotEditable ||
+                    go.hideFlags == HideFlags.HideAndDontSave)
+                    continue;
+
+                if (go.GetComponent<T>() != null)
+                    objectsInScene.Add(go);      
+            }
+
+            return objectsInScene;
         }
     }
 }
