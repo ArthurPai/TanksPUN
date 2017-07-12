@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using ExitGames.Client.Photon;
+using System.Collections.Generic;
 
 namespace TanksPUN
 {
@@ -22,6 +24,7 @@ namespace TanksPUN
         private float m_ChargeSpeed;                // How fast the launch force increases, based on the max charge time.
         private bool m_Fired;                       // Whether or not the shell has been launched with this button press.
 
+        private int m_FireTimes = 0;
 
         private void OnEnable()
         {
@@ -91,10 +94,38 @@ namespace TanksPUN
             Rigidbody shellInstance = Instantiate (m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
             photonView.RPC("FireOther", PhotonTargets.Others, m_FireTransform.position);
 
+            m_FireTimes++;
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            parameters.Add ("player", PhotonNetwork.player.ID);
+            parameters.Add ("score", m_FireTimes.ToString());
+            PhotonNetwork.WebRpc("post-score", parameters);
+
             shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward;
             m_ShootingAudio.clip = m_FireClip;
             m_ShootingAudio.Play ();
             m_CurrentLaunchForce = m_MinLaunchForce;
+        }
+
+        void OnWebRpcResponse(OperationResponse operationResponse) {
+
+            if (operationResponse.ReturnCode != 0) {
+                Debug.Log("WebRPC 操作失敗. Response: " + operationResponse.ToStringFull());
+                return;
+            }
+
+            WebRpcResponse webRpcResponse = new WebRpcResponse (operationResponse);
+            if (webRpcResponse.ReturnCode != 0)
+            {
+                Debug.Log("WebRPC '" + webRpcResponse.Name + "發生問題. Error: " + webRpcResponse.ReturnCode + " Message: " + webRpcResponse.DebugMessage);
+                return;
+            }
+
+            Dictionary<string, object> parameters = webRpcResponse.Parameters;
+
+            // 列出回傳參數值,  像是 排名, 訊息等
+            foreach (KeyValuePair<string, object> pair in parameters) {
+                Debug.Log(string.Format("KEY {0} / VALUE: {1}", pair.Key, pair.Value));
+            }
         }
 
         [PunRPC]
